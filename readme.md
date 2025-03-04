@@ -1,26 +1,25 @@
-# Python Web Application
+# Async File Sorter
 
-This project implements a simple Python web application using an HTTP server. The app allows users to submit messages through a form, which are saved in a `data.json` file. The application can be run locally or in a Docker container using Docker Compose.
+## Description
+This Python script asynchronously sorts files from a source directory into subdirectories in a destination folder based on their extensions. It efficiently processes large numbers of files using asynchronous execution.
 
-##  Requirements
-- Install [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/)  
-- Ensure Git is installed on your system  
+## Features
+- Reads all files in a source directory (including subdirectories).
+- Copies files to subdirectories in the destination folder based on their file extensions.
+- Uses asynchronous operations for efficient execution.
+- Logs progress and errors.
 
-##  How to Run the Project  
+## Installation
+No additional dependencies are required. Ensure you have Python installed.
 
-1. **Clone the repository**  
-   ```sh
-   git clone https://github.com/Dmytro-Chernomord/goit-pythonweb-hw-03
-   cd goit-pythonweb-hw-03
-   ```
+## Usage
+Run the script from the command line:
 
-2. **Start the Docker containers**  
-   ```sh
-   docker-compose up --build
-   ```
+```sh
+python script.py /path/to/source /path/to/destination
+```
 
-3. **Verify the application is running**  
-   Open these URLs in your web browser:  
-   - Home Page: [http://localhost:3000/](http://localhost:3000/)  
-
+### Arguments
+- `source_folder`: Path to the folder containing files to be sorted.
+- `output_folder`: Path to the destination folder where sorted files will be stored.
 
