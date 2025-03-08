@@ -1,50 +1,67 @@
-import asyncio
-import shutil
-import argparse
-import logging
-from pathlib import Path
+from models import Base, engine
+from sqlalchemy.orm import sessionmaker
+from seed import seed_database
+from my_select import select_top_students, select_best_student_by_subject, select_avg_grade_by_group, \
+    select_overall_avg_grade, select_teacher_subjects, select_students_in_group, select_student_grades_in_group, \
+    select_teacher_avg_grade, select_student_courses, select_student_teacher_courses
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+Session = sessionmaker(bind=engine)
+session = Session()
+
+try:
+    if __name__ == "__main__":
+        Base.metadata.create_all(engine)
+        seed_database()
+
+        top_students = select_top_students(session)
+        print("Top 5 students with the highest average grade:")
+        for student in top_students:
+            print(student)
+
+        subject_id = 1
+        best_student_subject = select_best_student_by_subject(session, subject_id)
+        print(f"\nBest student in subject {subject_id}:")
+        print(best_student_subject)
+
+        avg_grade_by_group = select_avg_grade_by_group(session, subject_id)
+        print(f"\nAverage grade by group for subject {subject_id}:")
+        for group in avg_grade_by_group:
+            print(group)
+
+        overall_avg_grade = select_overall_avg_grade(session)
+        print(f"\nOverall average grade for all subjects: {overall_avg_grade}")
+
+        teacher_id = 1
+        teacher_subjects = select_teacher_subjects(session, teacher_id)
+        print(f"\nSubjects taught by teacher {teacher_id}:")
+        for subject in teacher_subjects:
+            print(subject)
+
+        group_id = 1
+        students_in_group = select_students_in_group(session, group_id)
+        print(f"\nStudents in group {group_id}:")
+        for student in students_in_group:
+            print(student)
+
+        student_grades_in_group = select_student_grades_in_group(session, group_id, subject_id)
+        print(f"\nStudent grades in group {group_id} for subject {subject_id}:")
+        for grade in student_grades_in_group:
+            print(grade)
+
+        teacher_avg_grade = select_teacher_avg_grade(session, teacher_id)
+        print(f"\nAverage grade for teacher {teacher_id}: {teacher_avg_grade}")
+
+        student_id = 1
+        student_courses = select_student_courses(session, student_id)
+        print(f"\nCourses taken by student {student_id}:")
+        for course in student_courses:
+            print(course)
+
+        student_teacher_courses = select_student_teacher_courses(session, student_id, teacher_id)
+        print(f"\nCourses taken by student {student_id} with teacher {teacher_id}:")
+        for course in student_teacher_courses:
+            print(course)
 
 
-async def copy_file(file_path: Path, output_folder: Path):
-    """Copies a file to the appropriate subfolder based on its extension."""
-    ext = file_path.suffix.lstrip('.').lower() or 'unknown'
-    target_dir = output_folder / ext
-    target_dir.mkdir(parents=True, exist_ok=True)
-    target_path = target_dir / file_path.name
-
-    try:
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, shutil.copy2, file_path, target_path)
-        logging.info(f'File {file_path} copied to {target_path}')
-    except Exception as e:
-        logging.error(f'Error copying {file_path}: {e}')
-
-
-async def read_folder(source_folder: Path, output_folder: Path):
-    """Reads all files in the source folder and sends them for copying."""
-    tasks = []
-    for file_path in source_folder.rglob('*'):
-        if file_path.is_file():
-            tasks.append(copy_file(file_path, output_folder))
-
-    await asyncio.gather(*tasks)
-
-
-async def main():
-    parser = argparse.ArgumentParser(description='Asynchronous file sorting by extension.')
-    parser.add_argument('source_folder', type=Path, help='Path to the source folder')
-    parser.add_argument('output_folder', type=Path, help='Path to the destination folder')
-    args = parser.parse_args()
-
-    if not args.source_folder.exists() or not args.source_folder.is_dir():
-        logging.error(f'Source folder {args.source_folder} does not exist or is not a directory.')
-        return
-
-    args.output_folder.mkdir(parents=True, exist_ok=True)
-    await read_folder(args.source_folder, args.output_folder)
-
-
-if __name__ == '__main__':
-    asyncio.run(main())
+finally:
+    session.close()

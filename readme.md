@@ -1,25 +1,39 @@
-# Async File Sorter
+# Student Grade Management System
 
-## Description
-This Python script asynchronously sorts files from a source directory into subdirectories in a destination folder based on their extensions. It efficiently processes large numbers of files using asynchronous execution.
+This project implements a system for managing student grades using SQLAlchemy and PostgreSQL. The system allows storing and processing data about students, teachers, subjects, and grades.
 
-## Features
-- Reads all files in a source directory (including subdirectories).
-- Copies files to subdirectories in the destination folder based on their file extensions.
-- Uses asynchronous operations for efficient execution.
-- Logs progress and errors.
+## Features:
+- Top 5 students with the highest average grades.
+- Best student in a specific subject.
+- Average grade by group for a specific subject.
+- Overall average grade for all students.
+- And much more...
 
-## Installation
-No additional dependencies are required. Ensure you have Python installed.
+## Setup Instructions
 
-## Usage
-Run the script from the command line:
+## Requirements
 
-```sh
-python script.py /path/to/source /path/to/destination
+- Python 3.13+
+- Docker
+
+### 1. Clone the repository:
+```bash
+git clone https://github.com/Dmytro-Chernomord/goit-pythonweb-hw-06
+cd goit-pythonweb-hw-06
 ```
 
-### Arguments
-- `source_folder`: Path to the folder containing files to be sorted.
-- `output_folder`: Path to the destination folder where sorted files will be stored.
+```bash
+pip install -r requirements.txt
+```
 
+### 2. Start PostgreSQL with Docker
+
+```bash
+docker run --name some-postgres -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgres
+```
+
+### 3. Start App
+
+```bash
+python main.py 
+```
