@@ -1,67 +1,99 @@
-from models import Base, engine
-from sqlalchemy.orm import sessionmaker
-from seed import seed_database
-from my_select import select_top_students, select_best_student_by_subject, select_avg_grade_by_group, \
-    select_overall_avg_grade, select_teacher_subjects, select_students_in_group, select_student_grades_in_group, \
-    select_teacher_avg_grade, select_student_courses, select_student_teacher_courses
+from datetime import date, timedelta
+from typing import List, Optional
 
-Session = sessionmaker(bind=engine)
-session = Session()
+from fastapi import FastAPI, Depends, HTTPException
+from sqlalchemy.orm import Session
+from pydantic import BaseModel, EmailStr
 
-try:
-    if __name__ == "__main__":
-        Base.metadata.create_all(engine)
-        seed_database()
+from database import SessionLocal, engine, Base
+from models import Contact
 
-        top_students = select_top_students(session)
-        print("Top 5 students with the highest average grade:")
-        for student in top_students:
-            print(student)
+Base.metadata.create_all(bind=engine)
 
-        subject_id = 1
-        best_student_subject = select_best_student_by_subject(session, subject_id)
-        print(f"\nBest student in subject {subject_id}:")
-        print(best_student_subject)
-
-        avg_grade_by_group = select_avg_grade_by_group(session, subject_id)
-        print(f"\nAverage grade by group for subject {subject_id}:")
-        for group in avg_grade_by_group:
-            print(group)
-
-        overall_avg_grade = select_overall_avg_grade(session)
-        print(f"\nOverall average grade for all subjects: {overall_avg_grade}")
-
-        teacher_id = 1
-        teacher_subjects = select_teacher_subjects(session, teacher_id)
-        print(f"\nSubjects taught by teacher {teacher_id}:")
-        for subject in teacher_subjects:
-            print(subject)
-
-        group_id = 1
-        students_in_group = select_students_in_group(session, group_id)
-        print(f"\nStudents in group {group_id}:")
-        for student in students_in_group:
-            print(student)
-
-        student_grades_in_group = select_student_grades_in_group(session, group_id, subject_id)
-        print(f"\nStudent grades in group {group_id} for subject {subject_id}:")
-        for grade in student_grades_in_group:
-            print(grade)
-
-        teacher_avg_grade = select_teacher_avg_grade(session, teacher_id)
-        print(f"\nAverage grade for teacher {teacher_id}: {teacher_avg_grade}")
-
-        student_id = 1
-        student_courses = select_student_courses(session, student_id)
-        print(f"\nCourses taken by student {student_id}:")
-        for course in student_courses:
-            print(course)
-
-        student_teacher_courses = select_student_teacher_courses(session, student_id, teacher_id)
-        print(f"\nCourses taken by student {student_id} with teacher {teacher_id}:")
-        for course in student_teacher_courses:
-            print(course)
+app = FastAPI()
 
 
-finally:
-    session.close()
+class ContactCreate(BaseModel):
+    first_name: str
+    last_name: str
+    email: EmailStr
+    phone: str
+    birthday: date
+    additional_info: Optional[str] = None
+
+
+class ContactResponse(ContactCreate):
+    id: int
+
+    class Config:
+        orm_mode = True
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+@app.post("/contacts/", response_model=ContactResponse)
+def create_contact(contact: ContactCreate, db: Session = Depends(get_db)):
+    db_contact = Contact(**contact.dict())
+    db.add(db_contact)
+    db.commit()
+    db.refresh(db_contact)
+    return db_contact
+
+
+@app.get("/contacts/", response_model=List[ContactResponse])
+def read_contacts(
+        db: Session = Depends(get_db),
+        name: Optional[str] = None,
+        email: Optional[EmailStr] = None
+):
+    query = db.query(Contact)
+    if name:
+        query = query.filter((Contact.first_name.ilike(f"%{name}%")) | (Contact.last_name.ilike(f"%{name}%")))
+    if email:
+        query = query.filter(Contact.email.ilike(f"%{email}%"))
+    return query.all()
+
+
+@app.get("/contacts/{contact_id}", response_model=ContactResponse)
+def read_contact(contact_id: int, db: Session = Depends(get_db)):
+    contact = db.query(Contact).filter(Contact.id == contact_id).first()
+    if contact is None:
+        raise HTTPException(status_code=404, detail="Contact not found")
+    return contact
+
+
+@app.put("/contacts/{contact_id}", response_model=ContactResponse)
+def update_contact(contact_id: int, contact_data: ContactCreate, db: Session = Depends(get_db)):
+    contact = db.query(Contact).filter(Contact.id == contact_id).first()
+    if contact is None:
+        raise HTTPException(status_code=404, detail="Contact not found")
+
+    for key, value in contact_data.dict().items():
+        setattr(contact, key, value)
+
+    db.commit()
+    db.refresh(contact)
+    return contact
+
+
+@app.delete("/contacts/{contact_id}", response_model=ContactResponse)
+def delete_contact(contact_id: int, db: Session = Depends(get_db)):
+    contact = db.query(Contact).filter(Contact.id == contact_id).first()
+    if contact is None:
+        raise HTTPException(status_code=404, detail="Contact not found")
+    db.delete(contact)
+    db.commit()
+    return contact
+
+
+@app.get("/contacts/upcoming_birthdays/", response_model=List[ContactResponse])
+def get_upcoming_birthdays(db: Session = Depends(get_db)):
+    today = date.today()
+    next_week = today + timedelta(days=7)
+    return db.query(Contact).filter(Contact.birthday.between(today, next_week)).all()
