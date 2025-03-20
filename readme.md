@@ -1,76 +1,147 @@
-# FastAPI Contacts API
+# FastAPI Contacts Management API
 
-This is a simple REST API built with FastAPI and PostgreSQL to manage contacts. It supports CRUD operations and additional functionality like searching contacts and retrieving upcoming birthdays.
+## 🚀 Overview
+This project is a **FastAPI-based REST API** that allows users to manage their contacts. It includes authentication, email verification, JWT authorization, rate limiting, and avatar uploading via Cloudinary.
 
-## Features
-- Create a new contact
-- Retrieve all contacts
-- Retrieve a contact by ID
-- Update a contact
-- Delete a contact
-- Search contacts by name or email
-- Get contacts with upcoming birthdays (next 7 days)
+## 📌 Features
+- **User Authentication & Authorization** (JWT-based)
+- **User Registration with Email Verification**
+- **CRUD Operations for Contacts**
+- **User Rate Limiting** (SlowAPI)
+- **CORS Support**
+- **Cloudinary Integration for Avatar Uploads**
+- **Docker & PostgreSQL Support**
 
-## Technologies Used
-- FastAPI
-- SQLAlchemy
-- PostgreSQL
-- Pydantic
-- Docker (optional for running PostgreSQL)
+## 🛠 Tech Stack
+- **Python 3.11**
+- **FastAPI**
+- **SQLAlchemy** (PostgreSQL)
+- **JWT (PyJWT & OAuth2)**
+- **Passlib (Password Hashing)**
+- **Cloudinary (Image Uploads)**
+- **Docker & Docker Compose**
+- **SlowAPI (Rate Limiting)**
 
-## Installation & Setup
+## 🔧 Installation & Setup
 
-### 1. Clone the Repository
+### 1️⃣ **Clone the Repository**
 ```bash
-git clone https://github.com/yourusername/fastapi-contacts-api.git
-cd fastapi-contacts-api
+git clone https://github.com/yourusername/fastapi-contacts.git
+cd fastapi-contacts
 ```
 
-### 2. Create a Virtual Environment
+### 2️⃣ **Create a Virtual Environment & Install Dependencies**
 ```bash
-python3 -m venv venv
-source venv/bin/activate  # On Windows use: venv\Scripts\activate
-```
-
-### 3. Install Dependencies
-```bash
+python -m venv venv
+source venv/bin/activate  # On Windows use `venv\Scripts\activate`
 pip install -r requirements.txt
 ```
 
-### 4. Setup PostgreSQL
-If you don’t have PostgreSQL installed, you can run it using Docker:
-```bash
-docker run --name some-postgres -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgres
+### 3️⃣ **Set Up Environment Variables**
+Create a `.env` file and add:
+```env
+SECRET_KEY=your_secret_key
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+DATABASE_URL=postgresql://postgres:mysecretpassword@localhost:5432/fastapi_db
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+SMTP_EMAIL=your_email@gmail.com
+SMTP_PASSWORD=your_app_password
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 ```
 
-### 5. Initialize the Database
+### 4️⃣ **Run with Docker Compose**
 ```bash
-python -c "from database import Base, engine; Base.metadata.create_all(bind=engine)"
+docker-compose up --build
 ```
 
-### 6. Run the API
+### 5️⃣ **Run PostgreSQL Locally (without Docker Compose)**
+If using Docker manually, run:
+```bash
+docker run --name fastapi_db -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgres
+```
+Or start an existing container:
+```bash
+docker start fastapi_db
+```
+
+### 6️⃣ **Run FastAPI Server**
 ```bash
 uvicorn main:app --reload
 ```
+The API will be available at: `http://127.0.0.1:8000`
 
-## API Endpoints
-| Method  | Endpoint                         | Description |
-|---------|----------------------------------|-------------|
-| POST    | `/contacts/`                     | Create a new contact |
-| GET     | `/contacts/`                     | Get all contacts (with optional search by name/email) |
-| GET     | `/contacts/{contact_id}`         | Get a contact by ID |
-| PUT     | `/contacts/{contact_id}`         | Update an existing contact |
-| DELETE  | `/contacts/{contact_id}`         | Delete a contact |
-| GET     | `/contacts/upcoming_birthdays/`  | Get contacts with birthdays in the next 7 days |
+### 7️⃣ **Useful Docker Commands**
+#### Check running containers:
+```bash
+docker ps
+```
+#### Stop all containers:
+```bash
+docker-compose down
+```
+#### Restart the application:
+```bash
+docker-compose restart
+```
+#### View logs:
+```bash
+docker-compose logs -f
+```
+#### Remove all containers and volumes:
+```bash
+docker-compose down -v
+```
 
-## Access API Documentation
-Once the server is running, you can access interactive API documentation at:
-- Swagger UI: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-- Redoc: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
+## 📜 API Documentation
+**Swagger UI:**
+```
+http://127.0.0.1:8000/docs
+```
+**ReDoc:**
+```
+http://127.0.0.1:8000/redoc
+```
 
-## Contributing
-Feel free to submit issues or pull requests to improve this project!
+## 🔑 Authentication
+1️⃣ **Register a new user:**
+```http
+POST /register/
+```
+2️⃣ **Verify email:**
+```http
+GET /verify/{token}
+```
+3️⃣ **Login to get JWT token:**
+```http
+POST /token
+```
+4️⃣ **Authorize in Swagger UI:**
+- Click **Authorize** button.
+- Enter: `Bearer <your_access_token>`.
 
-## License
-This project is licensed under the MIT License.
+## 📞 Contact Management
+- **Create Contact:** `POST /contacts/`
+- **Get Contacts:** `GET /contacts/`
+- **Get Contact by ID:** `GET /contacts/{contact_id}`
+- **Update Contact:** `PUT /contacts/{contact_id}`
+- **Delete Contact:** `DELETE /contacts/{contact_id}`
 
+## 🖼️ Upload Avatar
+- **Upload Avatar:** `PUT /users/avatar/`
+- File should be uploaded in **multipart/form-data** format.
+
+## 🏗️ Project Structure
+```
+📁 fastapi-contacts/
+│-- 📄 main.py          # Main FastAPI Application
+│-- 📄 database.py      # Database Configuration
+│-- 📄 models.py        # SQLAlchemy Models
+│-- 📄 schemas.py       # Pydantic Schemas
+│-- 📄 requirements.txt # Dependencies
+│-- 📄 .env             # Environment Variables
+│-- 📄 Dockerfile       # Docker Setup
+│-- 📄 docker-compose.yml # Docker Compose Setup
+```
