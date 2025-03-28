@@ -11,6 +11,10 @@ This project is a **FastAPI-based REST API** that allows users to manage their c
 - **CORS Support**
 - **Cloudinary Integration for Avatar Uploads**
 - **Docker & PostgreSQL Support**
+- **Redis Caching**
+- **Password Reset Functionality**
+- **User Roles (Admin/User)**
+- **Sphinx Documentation**
 
 ## 🛠 Tech Stack
 - **Python 3.11**
@@ -21,6 +25,8 @@ This project is a **FastAPI-based REST API** that allows users to manage their c
 - **Cloudinary (Image Uploads)**
 - **Docker & Docker Compose**
 - **SlowAPI (Rate Limiting)**
+- **Redis (Caching)**
+- **Sphinx (Documentation)**
 
 ## 🔧 Installation & Setup
 
@@ -40,16 +46,18 @@ pip install -r requirements.txt
 ### 3️⃣ **Set Up Environment Variables**
 Create a `.env` file and add:
 ```env
-SECRET_KEY=your_secret_key
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-DATABASE_URL=postgresql://postgres:mysecretpassword@localhost:5432/fastapi_db
-SMTP_SERVER=smtp.gmail.com
-SMTP_PORT=587
-SMTP_EMAIL=your_email@gmail.com
-SMTP_PASSWORD=your_app_password
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
+SECRET_KEY=
+ACCESS_TOKEN_EXPIRE_MINUTES=
+DATABASE_URL=
+SMTP_SERVER=
+SMTP_PORT=
+SMTP_EMAIL=
+SMTP_PASSWORD=
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+REDIS_HOST=
+REDIS_PORT=
 ```
 
 ### 4️⃣ **Run with Docker Compose**
@@ -57,14 +65,18 @@ CLOUDINARY_API_SECRET=your_api_secret
 docker-compose up --build
 ```
 
-### 5️⃣ **Run PostgreSQL Locally (without Docker Compose)**
+### 5️⃣ **Run PostgreSQL & Redis Locally (without Docker Compose)**
 If using Docker manually, run:
 ```bash
+# PostgreSQL
 docker run --name fastapi_db -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgres
+
+# Redis
+docker run --name fastapi_redis -p 6379:6379 -d redis
 ```
-Or start an existing container:
+Or start existing containers:
 ```bash
-docker start fastapi_db
+docker start fastapi_db fastapi_redis
 ```
 
 ### 6️⃣ **Run FastAPI Server**
@@ -73,75 +85,134 @@ uvicorn main:app --reload
 ```
 The API will be available at: `http://127.0.0.1:8000`
 
-### 7️⃣ **Useful Docker Commands**
-#### Check running containers:
-```bash
-docker ps
-```
-#### Stop all containers:
-```bash
-docker-compose down
-```
-#### Restart the application:
-```bash
-docker-compose restart
-```
-#### View logs:
-```bash
-docker-compose logs -f
-```
-#### Remove all containers and volumes:
-```bash
-docker-compose down -v
-```
-
 ## 📜 API Documentation
-**Swagger UI:**
+
+### Interactive Documentation
+- **Swagger UI:** `http://127.0.0.1:8000/docs`
+- **ReDoc:** `http://127.0.0.1:8000/redoc`
+
+### Generated Documentation
+To generate and view the Sphinx documentation:
+```bash
+cd docs
+make html
 ```
-http://127.0.0.1:8000/docs
-```
-**ReDoc:**
-```
-http://127.0.0.1:8000/redoc
+The documentation will be available in `docs/_build/html/index.html`
+
+## 🧪 Testing
+
+### Running Tests
+To run the tests with coverage reporting:
+```bash
+PYTHONPATH=$PYTHONPATH:. pytest tests/ -v --cov=. --cov-report=term-missing
 ```
 
-## 🔑 Authentication
-1️⃣ **Register a new user:**
-```http
-POST /register/
+### Test Coverage
+Current test coverage:
+- Overall: 84%
+- `database.py`: 92%
+- `main.py`: 69%
+- `models.py`: 100%
+- `tests/conftest.py`: 100%
+- `tests/test_auth.py`: 100%
+- `tests/test_contacts.py`: 100%
+
+### Test Categories
+
+#### Authentication Tests (`tests/test_auth.py`)
+- Token creation
+- Password verification
+- User registration
+- Duplicate user check
+- Login functionality
+- Invalid credentials handling
+- Current user information
+- Invalid token handling
+- Password reset functionality
+- User role verification
+
+#### Contacts Tests (`tests/test_contacts.py`)
+- Contact creation
+- Contact list retrieval
+- Single contact retrieval
+- Contact update
+- Contact deletion
+- Unauthorized access handling
+- Non-existent contact handling
+
+## 🔐 Authentication & Authorization
+
+### User Roles
+- **User**: Standard user with basic access
+- **Admin**: Administrator with additional privileges
+  - Can change their avatar
+  - Has full access to all features
+
+### Password Reset
+1. Request password reset:
+   ```bash
+   POST /forgot-password/
+   ```
+2. Check email for reset link
+3. Reset password using the token:
+   ```bash
+   POST /reset-password/{token}
+   ```
+
+### Redis Caching
+- User data is cached in Redis for 30 minutes
+- Cache is automatically updated when user data changes
+- Improves performance by reducing database queries
+
+## 🛠 Development
+
+### Code Style
+The project follows PEP 8 guidelines. To check code style:
+```bash
+flake8 .
 ```
-2️⃣ **Verify email:**
-```http
-GET /verify/{token}
+
+### Documentation
+All functions and classes have docstrings following Google style. To generate documentation:
+```bash
+cd docs
+make html
 ```
-3️⃣ **Login to get JWT token:**
-```http
-POST /token
+
+### Testing
+To run specific test files:
+```bash
+PYTHONPATH=$PYTHONPATH:. pytest tests/test_auth.py -v
 ```
-4️⃣ **Authorize in Swagger UI:**
-- Click **Authorize** button.
-- Enter: `Bearer <your_access_token>`.
+
+To run a specific test:
+```bash
+PYTHONPATH=$PYTHONPATH:. pytest tests/test_auth.py::test_login_success -v
+```
+
+## 📦 Dependencies
+- FastAPI
+- SQLAlchemy
+- PostgreSQL
+- Redis
+- JWT
+- Passlib
+- Cloudinary
+- Sphinx
+- pytest
+- pytest-cov
+- flake8
+
+## 🔒 Security
+- JWT-based authentication
+- Password hashing with bcrypt
+- Rate limiting
+- CORS protection
+- Email verification
+- Role-based access control
+
+## 📝 License
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 📞 Contact Management
-- **Create Contact:** `POST /contacts/`
-- **Get Contacts:** `GET /contacts/`
-- **Get Contact by ID:** `GET /contacts/{contact_id}`
-- **Update Contact:** `PUT /contacts/{contact_id}`
-- **Delete Contact:** `DELETE /contacts/{contact_id}`
-
-## 🖼️ Upload Avatar
-- **Upload Avatar:** `PUT /users/avatar/`
-- File should be uploaded in **multipart/form-data** format.
-
-## 🏗️ Project Structure
-```
-📁 fastapi-contacts/
-│-- 📄 main.py          # Main FastAPI Application
-│-- 📄 database.py      # Database Configuration
-│-- 📄 models.py        # SQLAlchemy Models
-│-- 📄 schemas.py       # Pydantic Schemas
-│-- 📄 requirements.txt # Dependencies
-│-- 📄 .env             # Environment Variables
-│-- 📄 Dockerfile       # Docker Setup
-│-- 📄 docker-compose.yml # Docker Compose Setup
-```
+- **Create Contact:** `
